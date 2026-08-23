@@ -1,0 +1,6 @@
+{
+  "name": "Ahorcado P2P",
+  "description": "Juego multijugador del Ahorcado para hasta 4 jugadores conectándose de forma local sin Internet mediante Nearby Connections (Bluetooth y Wi-Fi).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
