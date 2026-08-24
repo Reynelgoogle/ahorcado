@@ -34,6 +34,7 @@ object MessageProtocol {
     private const val KEY_MAX_ERRORS = "max_errors"
     private const val KEY_STATUS = "status"
     private const val KEY_PLAYERS = "players"
+    private const val KEY_WORD_CREATOR = "word_creator"
     private const val KEY_CURRENT_TURN = "current_turn"
     private const val KEY_LAST_LETTER = "last_letter"
     private const val KEY_LAST_PLAYER = "last_player"
@@ -52,6 +53,7 @@ object MessageProtocol {
             put(KEY_ERRORS, state.errors)
             put(KEY_MAX_ERRORS, state.maxErrors)
             put(KEY_STATUS, state.status.name)
+            put(KEY_WORD_CREATOR, state.wordCreatorPlayerId)
             put(KEY_CURRENT_TURN, state.currentTurnPlayerId)
             put(KEY_TIMER_SEC, state.turnTimeRemainingSec)
             state.lastGuessedLetter?.let { put(KEY_LAST_LETTER, it.toString()) }
@@ -173,6 +175,7 @@ object MessageProtocol {
                         maxErrors = json.optInt(KEY_MAX_ERRORS, 6),
                         status = GameStatus.valueOf(json.optString(KEY_STATUS, GameStatus.WAITING_PLAYERS.name)),
                         players = players,
+                        wordCreatorPlayerId = json.optString(KEY_WORD_CREATOR, ""),
                         currentTurnPlayerId = json.optString(KEY_CURRENT_TURN, ""),
                         lastGuessedLetter = lastLetter,
                         lastGuessedPlayerId = if (json.has(KEY_LAST_PLAYER)) json.getString(KEY_LAST_PLAYER) else null,

@@ -37,6 +37,7 @@ fun RevealedWordView(
     secretWord: String,
     revealedLetters: Set<Char>,
     isLost: Boolean = false,
+    showAllLetters: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val isDark = isSystemInDarkTheme()
@@ -51,16 +52,19 @@ fun RevealedWordView(
         secretWord.uppercase().forEachIndexed { index, char ->
             val isRevealed = char in revealedLetters
             val isMissingOnLoss = isLost && !isRevealed
+            val isVisible = isRevealed || isLost || showAllLetters
 
             val cardBg = when {
                 isMissingOnLoss -> if (isDark) Color(0xFF7F1D1D) else Color(0xFFFEE2E2)
                 isRevealed -> if (isDark) Color(0xFF1E3A8A) else Color(0xFFDBEAFE)
+                showAllLetters -> if (isDark) Color(0xFF334155).copy(alpha = 0.5f) else Color(0xFFF1F5F9)
                 else -> if (isDark) Color(0xFF1F2937) else Color(0xFFFFFDF8)
             }
 
             val cardBorder = when {
                 isMissingOnLoss -> Color(0xFFDC2626)
                 isRevealed -> Color(0xFF2563EB)
+                showAllLetters -> if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8)
                 else -> if (isDark) Color(0xFF475569) else Color(0xFF1E293B)
             }
 
@@ -76,7 +80,7 @@ fun RevealedWordView(
                 contentAlignment = Alignment.Center
             ) {
                 AnimatedContent(
-                    targetState = isRevealed || isLost,
+                    targetState = isVisible,
                     transitionSpec = { fadeIn() togetherWith fadeOut() },
                     label = "letterAnim_$index"
                 ) { shouldShow ->
@@ -88,6 +92,7 @@ fun RevealedWordView(
                             color = when {
                                 isMissingOnLoss -> if (isDark) Color(0xFFFCA5A5) else Color(0xFFDC2626)
                                 isRevealed -> if (isDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8)
+                                showAllLetters -> if (isDark) Color(0xFFE2E8F0) else Color(0xFF334155)
                                 else -> MaterialTheme.colorScheme.onSurface
                             }
                         )

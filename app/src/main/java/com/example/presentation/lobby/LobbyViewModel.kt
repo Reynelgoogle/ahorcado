@@ -36,6 +36,7 @@ class LobbyViewModel(
     val discoveredHosts: StateFlow<List<DiscoveredHost>> = NearbyManager.discoveredHosts
     val players: StateFlow<List<Player>> = repository.players
     val localPlayer: StateFlow<Player> = repository.localPlayer
+    val gameState: StateFlow<GameState> = repository.gameState
 
     fun setPlayerName(name: String) {
         _uiState.value = _uiState.value.copy(playerName = name)

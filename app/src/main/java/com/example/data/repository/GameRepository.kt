@@ -179,7 +179,11 @@ object GameRepository {
         if (!_localPlayer.value.isHost) return false
 
         val currentPlayers = _players.value
-        val firstTurnId = currentPlayers.firstOrNull()?.id ?: _localPlayer.value.id
+        val hostId = _localPlayer.value.id
+        val creatorId = hostId
+        // En multijugador, los adivinadores son los que no crearon la palabra
+        val guessers = currentPlayers.filter { it.id != creatorId }
+        val firstTurnId = if (guessers.isNotEmpty()) guessers.first().id else hostId
 
         val newState = GameState(
             secretWord = secretWord.uppercase().trim(),
@@ -192,6 +196,7 @@ object GameRepository {
             maxErrors = 6,
             status = GameStatus.PLAYING,
             players = currentPlayers,
+            wordCreatorPlayerId = creatorId,
             currentTurnPlayerId = firstTurnId,
             turnTimeRemainingSec = 20
         )
@@ -248,19 +253,20 @@ object GameRepository {
                     _gameState.value = updated
                     broadcastGameState(updated)
                 } else {
-                    // Turn timeout: pass turn to next player
-                    val players = _gameState.value.players
-                    if (players.size > 1) {
-                        val currentIdx = players.indexOfFirst { it.id == _gameState.value.currentTurnPlayerId }
-                        val nextIdx = if (currentIdx >= 0) (currentIdx + 1) % players.size else 0
+                    // Tiempo de turno agotado: pasar al siguiente adivinador
+                    val guessers = _gameState.value.players.filter { it.id != _gameState.value.wordCreatorPlayerId }
+                    val activeGuessers = if (guessers.isNotEmpty()) guessers else _gameState.value.players
+                    if (activeGuessers.size > 1) {
+                        val currentIdx = activeGuessers.indexOfFirst { it.id == _gameState.value.currentTurnPlayerId }
+                        val nextIdx = if (currentIdx >= 0) (currentIdx + 1) % activeGuessers.size else 0
                         val updated = _gameState.value.copy(
-                            currentTurnPlayerId = players[nextIdx].id,
+                            currentTurnPlayerId = activeGuessers[nextIdx].id,
                             turnTimeRemainingSec = 20
                         )
                         _gameState.value = updated
                         broadcastGameState(updated)
                     } else {
-                        // Solo player: counts as error on timeout
+                        // Un solo adivinador: agotar turno cuenta como error (fallo)
                         val currentErrors = _gameState.value.errors + 1
                         val isLost = currentErrors >= _gameState.value.maxErrors
                         val updated = _gameState.value.copy(
@@ -302,8 +308,19 @@ object GameRepository {
     private fun handleIncomingMessage(endpointId: String, bytes: ByteArray) {
         when (val message = MessageProtocol.parseMessage(bytes)) {
             is MessageProtocol.ParsedMessage.GameStateMessage -> {
+                val prevStatus = _gameState.value.status
+                val newStatus = message.state.status
                 _gameState.value = message.state
                 _players.value = message.state.players
+
+                // Sincronización de navegación en clientes al cambiar de estado
+                if (newStatus == GameStatus.PLAYING && prevStatus != GameStatus.PLAYING) {
+                    _gameEvents.tryEmit(GameUiEvent.GameStarted(message.state.secretWord.length))
+                } else if (newStatus == GameStatus.SELECTING_WORD && prevStatus != GameStatus.SELECTING_WORD) {
+                    _gameEvents.tryEmit(GameUiEvent.NavigateToWordSelection)
+                } else if (newStatus == GameStatus.WAITING_PLAYERS && prevStatus != GameStatus.WAITING_PLAYERS) {
+                    _gameEvents.tryEmit(GameUiEvent.NavigateToLobby)
+                }
             }
 
             is MessageProtocol.ParsedMessage.PlayerJoinMessage -> {

@@ -123,9 +123,12 @@ fun GameScreen(
         }
     }
 
-    val isMyTurn = gameState.currentTurnPlayerId == localPlayer.id
+    val isWordCreator = gameState.wordCreatorPlayerId == localPlayer.id && gameState.players.size > 1
+    val isGuesser = !isWordCreator
+    val isMyTurn = isGuesser && (gameState.currentTurnPlayerId == localPlayer.id)
     val isGameOver = gameState.status == GameStatus.WON || gameState.status == GameStatus.LOST
     val currentTurnPlayer = gameState.players.find { it.id == gameState.currentTurnPlayerId }
+    val creatorPlayer = gameState.players.find { it.id == gameState.wordCreatorPlayerId }
 
     // Pulsación visual cuando el temporizador llega a <= 5s
     val isUrgentTime = gameState.turnTimeRemainingSec <= 5 && gameState.status == GameStatus.PLAYING
@@ -173,7 +176,7 @@ fun GameScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Column {
                                 Text(
-                                    text = "Stickman Ahorcado",
+                                    text = if (isWordCreator) "Creador: ${gameState.secretWord}" else "Stickman Ahorcado",
                                     fontWeight = FontWeight.Black,
                                     fontSize = 17.sp
                                 )
@@ -238,11 +241,20 @@ fun GameScreen(
                 }
 
                 // 2. Banner de Turno + Temporizador Circular
+                val bannerText = when {
+                    isGameOver -> if (gameState.status == GameStatus.WON) "¡Partida finalizada con victoria!" else "¡Partida finalizada!"
+                    isWordCreator -> "👑 Creador: ${currentTurnPlayer?.name ?: "Los adivinadores"} intentan adivinar"
+                    isMyTurn -> "✏️ ¡Tu turno de arriesgar una letra!"
+                    else -> "⏳ Turno de ${currentTurnPlayer?.name ?: "otro jugador"}..."
+                }
+
                 DoodleCard(
                     modifier = Modifier.fillMaxWidth(),
                     borderColor = if (isMyTurn) MaterialTheme.colorScheme.primary else charcoalBorder,
                     backgroundColor = if (isMyTurn) {
                         if (isDark) Color(0xFF1E3A8A).copy(alpha = 0.5f) else Color(0xFFDBEAFE)
+                    } else if (isWordCreator) {
+                        if (isDark) Color(0xFF78350F).copy(alpha = 0.3f) else Color(0xFFFEF3C7)
                     } else {
                         if (isDark) Color(0xFF1E293B) else Color(0xFFFFFDF8)
                     }
@@ -256,11 +268,13 @@ fun GameScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                             Text(
-                                text = if (isMyTurn) "✏️ ¡Tu turno de arriesgar!" else "⏳ Turno de ${currentTurnPlayer?.name ?: "otro jugador"}",
+                                text = bannerText,
                                 fontWeight = FontWeight.Black,
                                 fontSize = 14.sp,
                                 color = if (isMyTurn) {
                                     if (isDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8)
+                                } else if (isWordCreator) {
+                                    if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E)
                                 } else {
                                     MaterialTheme.colorScheme.onSurface
                                 }
@@ -400,6 +414,7 @@ fun GameScreen(
                         secretWord = gameState.secretWord,
                         revealedLetters = gameState.revealedLetters,
                         isLost = gameState.status == GameStatus.LOST,
+                        showAllLetters = isWordCreator,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
@@ -408,13 +423,40 @@ fun GameScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // 6. Teclado Virtual con diseño Stickman
-                KeyboardGrid(
-                    guessedLetters = gameState.guessedLetters,
-                    secretWord = gameState.secretWord,
-                    isEnabled = isMyTurn && !isGameOver,
-                    onLetterClick = { letter -> viewModel.onLetterClicked(letter) }
-                )
+                // 6. Teclado Virtual o Panel de Creador
+                if (isWordCreator && !isGameOver) {
+                    DoodleCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        borderColor = charcoalBorder,
+                        backgroundColor = if (isDark) Color(0xFF1E293B) else Color(0xFFF8FAFC)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "🔒 Modo Creador de la Palabra",
+                                fontWeight = FontWeight.Black,
+                                fontSize = 15.sp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Elegiste la palabra '${gameState.secretWord}'. Los adivinadores deben descubrirla letra a letra antes de que el Stickman sea completado.",
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else {
+                    KeyboardGrid(
+                        guessedLetters = gameState.guessedLetters,
+                        secretWord = gameState.secretWord,
+                        isEnabled = isMyTurn && !isGameOver,
+                        onLetterClick = { letter -> viewModel.onLetterClicked(letter) }
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -428,6 +470,19 @@ fun GameScreen(
         // Diálogo Fin de Partida con Estilo Boceto
         if (isGameOver) {
             val isWin = gameState.status == GameStatus.WON
+            val titleText = when {
+                isWin && isGuesser -> "¡Ganaste! 🎉 Salvaste al Stickman"
+                isWin && isWordCreator -> "¡Los Adivinadores Salvaron al Stickman! 🎉"
+                !isWin && isWordCreator -> "¡Ganaste como Creador! 👑 Tu palabra no fue adivinada"
+                else -> "¡El Stickman ha caído! ☠️"
+            }
+            val subtitleText = when {
+                isWin && isGuesser -> "¡Descubrieron todas las letras a tiempo!"
+                isWin && isWordCreator -> "Los rivales adivinaron tu palabra antes de completar el dibujo."
+                !isWin && isWordCreator -> "Completaron el dibujo y se agotaron todas las vidas de los adivinadores."
+                else -> "Se completó el dibujo y se agotaron las vidas de los adivinadores."
+            }
+
             AlertDialog(
                 onDismissRequest = { },
                 icon = {
@@ -440,10 +495,10 @@ fun GameScreen(
                 },
                 title = {
                     Text(
-                        text = if (isWin) "¡Victoria del Stickman! 🎉" else "¡El Stickman ha caído! ☠️",
+                        text = titleText,
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Black,
-                        fontSize = 20.sp
+                        fontSize = 19.sp
                     )
                 },
                 text = {
@@ -452,7 +507,7 @@ fun GameScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = if (isWin) "¡Salvaron al Stickman adivinando la palabra a tiempo!" else "Se completó el dibujo y se agotaron las vidas.",
+                            text = subtitleText,
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.bodyMedium
                         )

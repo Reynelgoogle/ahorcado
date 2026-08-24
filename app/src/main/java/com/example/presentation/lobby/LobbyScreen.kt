@@ -95,12 +95,19 @@ fun LobbyScreen(
     val discoveredHosts by viewModel.discoveredHosts.collectAsStateWithLifecycle()
     val players by viewModel.players.collectAsStateWithLifecycle()
     val localPlayer by viewModel.localPlayer.collectAsStateWithLifecycle()
+    val gameState by viewModel.gameState.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val permissionState = rememberNearbyPermissionsState()
     val scrollState = rememberScrollState()
 
     val charcoalBorder = if (isDark) Color(0xFF64748B) else Color(0xFF1E293B)
+
+    LaunchedEffect(gameState.status) {
+        if (gameState.status == com.example.data.models.GameStatus.PLAYING) {
+            onNavigateToGame()
+        }
+    }
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {

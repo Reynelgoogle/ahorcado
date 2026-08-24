@@ -77,5 +77,33 @@ class ExampleRobolectricTest {
     assertFalse(checkWin(word, setOf('C', 'A')))
     assertTrue(checkWin(word, setOf('C', 'A', 'S')))
   }
+
+  @Test
+  fun `message protocol serialization and deserialization preserves word creator`() {
+    val p1 = Player("p1", "Alice", isHost = true)
+    val p2 = Player("p2", "Bob", isHost = false)
+    val state = GameState(
+      status = GameStatus.PLAYING,
+      secretWord = "COMPOSE",
+      revealedLetters = setOf('C', 'O'),
+      guessedLetters = setOf('C', 'O', 'Z'),
+      errors = 1,
+      currentTurnPlayerId = "p2",
+      players = listOf(p1, p2),
+      wordCreatorPlayerId = "p1"
+    )
+
+    val bytes = com.example.network.MessageProtocol.serializeGameState(state)
+    val parsed = com.example.network.MessageProtocol.parseMessage(bytes)
+
+    assertTrue(parsed is com.example.network.MessageProtocol.ParsedMessage.GameStateMessage)
+    val deserialized = (parsed as com.example.network.MessageProtocol.ParsedMessage.GameStateMessage).state
+
+    assertEquals("p1", deserialized.wordCreatorPlayerId)
+    assertEquals("COMPOSE", deserialized.secretWord)
+    assertEquals("p2", deserialized.currentTurnPlayerId)
+    assertEquals(1, deserialized.errors)
+    assertEquals(2, deserialized.players.size)
+  }
 }
 

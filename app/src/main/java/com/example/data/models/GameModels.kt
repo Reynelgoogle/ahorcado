@@ -61,6 +61,7 @@ data class GameState(
     val maxErrors: Int = 6,
     val status: GameStatus = GameStatus.WAITING_PLAYERS,
     val players: List<Player> = emptyList(),
+    val wordCreatorPlayerId: String = "",
     val currentTurnPlayerId: String = "",
     val lastGuessedLetter: Char? = null,
     val lastGuessedPlayerId: String? = null,

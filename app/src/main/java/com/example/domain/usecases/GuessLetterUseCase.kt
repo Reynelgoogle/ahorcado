@@ -43,14 +43,17 @@ class GuessLetterUseCase(
             else -> GameStatus.PLAYING
         }
 
-        // Rotación de turno al siguiente jugador si hay más de uno y la partida continúa
-        val nextPlayerId = if (newStatus == GameStatus.PLAYING && currentState.players.isNotEmpty()) {
-            val currentIndex = currentState.players.indexOfFirst { it.id == guessingPlayerId }
+        // Rotación de turno entre los adivinadores (excluyendo al creador de la palabra)
+        val guessers = currentState.players.filter { it.id != currentState.wordCreatorPlayerId }
+        val activePlayers = if (guessers.isNotEmpty()) guessers else currentState.players
+
+        val nextPlayerId = if (newStatus == GameStatus.PLAYING && activePlayers.isNotEmpty()) {
+            val currentIndex = activePlayers.indexOfFirst { it.id == guessingPlayerId }
             if (currentIndex != -1) {
-                val nextIndex = (currentIndex + 1) % currentState.players.size
-                currentState.players[nextIndex].id
+                val nextIndex = (currentIndex + 1) % activePlayers.size
+                activePlayers[nextIndex].id
             } else {
-                currentState.players.first().id
+                activePlayers.first().id
             }
         } else {
             currentState.currentTurnPlayerId
