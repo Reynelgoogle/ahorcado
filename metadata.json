@@ -1,0 +1,8 @@
+{
+  "name": "Ahorcado P2P",
+  "description": "Juego de Ahorcado clásico y multijugador P2P Nearby Connections",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

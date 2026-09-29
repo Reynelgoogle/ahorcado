@@ -1,5 +1,6 @@
 package com.aistudio.ahorcado.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,6 +50,7 @@ import com.aistudio.ahorcado.ui.theme.DoodleColors
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WordScreen() {
+    BackHandler { GameRepository.leaveToMenu() }
     val mode by GameRepository.modeFlow.collectAsState()
     val me by GameRepository.localPlayer.collectAsState()
 

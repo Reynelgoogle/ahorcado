@@ -1,6 +1,7 @@
 package com.aistudio.ahorcado.ui.screens
 
 import android.os.SystemClock
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,11 +22,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -62,6 +65,9 @@ fun GameScreen() {
     val canPlay = state.phase == GamePhase.PLAYING &&
         (isMyTurn || mode == NetMode.OFFLINE)
 
+    var showExitConfirm by remember { mutableStateOf(false) }
+    BackHandler { showExitConfirm = true }
+
     // Ticker de cuenta regresiva (el deadline lo pone el host).
     var nowMs by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
     LaunchedEffect(state.phase, state.turnDeadline) {
@@ -81,6 +87,29 @@ fun GameScreen() {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Barra superior con botón de salir
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "AHORCADO",
+                fontWeight = FontWeight.Black,
+                color = DoodleColors.Cream,
+                fontSize = 18.sp,
+            )
+            TextButton(onClick = { showExitConfirm = true }) {
+                Text(
+                    text = "✕ Salir",
+                    color = DoodleColors.Cream.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+
         // ---- jugadores ----
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
@@ -209,6 +238,45 @@ fun GameScreen() {
             state = state,
             me = me,
             isAuthoritative = mode != NetMode.CLIENT,
+        )
+    }
+
+    if (showExitConfirm) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirm = false },
+            containerColor = DoodleColors.NavyDeep,
+            shape = RoundedCornerShape(22.dp),
+            title = {
+                Text(
+                    "¿Salir de la partida?",
+                    color = DoodleColors.Cream,
+                    fontWeight = FontWeight.Black,
+                )
+            },
+            text = {
+                Text(
+                    "Si sales ahora volverás al menú principal.",
+                    color = DoodleColors.Cream.copy(alpha = 0.8f),
+                    fontSize = 14.sp,
+                )
+            },
+            confirmButton = {
+                DoodleButton(
+                    text = "Salir",
+                    color = DoodleColors.Brick,
+                    onClick = {
+                        showExitConfirm = false
+                        GameRepository.leaveToMenu()
+                    },
+                )
+            },
+            dismissButton = {
+                DoodleButton(
+                    text = "Seguir jugando",
+                    color = DoodleColors.Cream,
+                    onClick = { showExitConfirm = false },
+                )
+            },
         )
     }
 }

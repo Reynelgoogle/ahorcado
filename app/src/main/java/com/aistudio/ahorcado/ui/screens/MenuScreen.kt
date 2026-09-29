@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -105,27 +106,27 @@ fun MenuScreen() {
                 focusedBorderColor = DoodleColors.Ink,
                 unfocusedBorderColor = DoodleColors.Ink,
             ),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("player_name_input"),
         )
         Spacer(Modifier.height(20.dp))
 
         DoodleButton(
             text = "🎪  Crear sala",
             onClick = createRoom,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("create_room_button"),
         )
         Spacer(Modifier.height(12.dp))
         DoodleButton(
             text = "🔍  Unirse a sala",
             onClick = findRooms,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("join_room_button"),
             color = DoodleColors.Cream,
         )
         Spacer(Modifier.height(12.dp))
         DoodleButton(
             text = "📱  Juego local (un teléfono)",
             onClick = { showLocalDialog = true },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("local_game_button"),
             color = DoodleColors.Leaf,
         )
         Spacer(Modifier.height(16.dp))

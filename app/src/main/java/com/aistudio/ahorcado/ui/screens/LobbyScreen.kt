@@ -1,11 +1,13 @@
 package com.aistudio.ahorcado.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,6 +47,7 @@ import androidx.compose.foundation.BorderStroke
 
 @Composable
 fun LobbyScreen(onNavigateToWord: () -> Unit) {
+    BackHandler { GameRepository.leaveToMenu() }
     val mode by GameRepository.modeFlow.collectAsState()
     val state by GameRepository.publicState.collectAsState()
     val me by GameRepository.localPlayer.collectAsState()
@@ -82,7 +85,7 @@ fun LobbyScreen(onNavigateToWord: () -> Unit) {
 }
 
 @Composable
-private fun HostLobby(
+private fun ColumnScope.HostLobby(
     me: Player,
     players: List<Player>,
     onPickWord: () -> Unit,
@@ -134,7 +137,7 @@ private fun HostLobby(
 }
 
 @Composable
-private fun ClientLobby(
+private fun ColumnScope.ClientLobby(
     me: Player,
     players: List<Player>,
 ) {
